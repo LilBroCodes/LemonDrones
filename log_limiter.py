@@ -19,16 +19,13 @@ def load_and_limit_fps(filename: str, target_fps: int) -> list[dict]:
     [{'timestamp': 0.0, 'state': {...}}, {'timestamp': 0.0167, 'state': {...}}, ...]
     """
 
-    # Load data from the JSON file
     with open(filename, "r") as file:
         data = json.load(file)
 
-    # Initialize variables
     frame_interval = 1 / target_fps
     reduced_data = []
     last_timestamp = None
 
-    # Process each record
     for record in data:
         timestamp = record["timestamp"]
 
@@ -40,7 +37,6 @@ def load_and_limit_fps(filename: str, target_fps: int) -> list[dict]:
     return reduced_data
 
 
-# Example usage
 if __name__ == "__main__":
     filename = 'state_log_4_fastloop.json'
     target_fps = 60
