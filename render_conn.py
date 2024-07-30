@@ -1,11 +1,13 @@
-from ursina import *
-from ursina.shaders import *
+from ursina import Ursina, Entity, Sky, load_texture, Vec3, EditorCamera, held_keys
+from ursina.shaders import basic_lighting_shader, lit_with_shadows_shader
 import djitellopy as tello
+import cv2
+import threading
 
 SPEED = 10
 R_SPEED = 10
 
-app = Ursina()
+app = Ursina(size=(800, 600))
 
 model_path = "dji_tello.glb"
 model_drone = Entity(model=model_path, scale=2, collider='box', position=(0, 1, 0), shader=basic_lighting_shader)
@@ -30,9 +32,18 @@ def connect_drone():
     drone.connect()
     drone.streamon()
 
+def show_fpv():
+    frame_read = drone.get_frame_read()
+    while True:
+        img = frame_read.frame
+        cv2.imshow("FPV Stream", img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
 
 connect_drone()
-
+fpv_thread = threading.Thread(target=show_fpv)
+fpv_thread.start()
 
 def normalize_angle(angle):
     while angle > 180:
@@ -40,7 +51,6 @@ def normalize_angle(angle):
     while angle < -180:
         angle += 360
     return angle
-
 
 def shortest_angle(current_angle, target_angle):
     delta_angle = target_angle - current_angle
@@ -50,34 +60,8 @@ def shortest_angle(current_angle, target_angle):
         delta_angle += 360
     return delta_angle
 
-
 def update():
     global drone
-
-    if held_keys['w']:
-        drone.move_forward(SPEED)
-    if held_keys['s']:
-        drone.move_back(SPEED)
-    if held_keys['a']:
-        drone.move_left(SPEED)
-    if held_keys['d']:
-        drone.move_right(SPEED)
-    if held_keys['up arrow']:
-        drone.move_up(SPEED)
-    if held_keys['down arrow']:
-        drone.move_down(SPEED)
-    if held_keys['q']:
-        drone.rotate_counter_clockwise(R_SPEED)
-    if held_keys['e']:
-        drone.rotate_clockwise(R_SPEED)
-    if held_keys['r']:
-        drone.move_up(SPEED)
-    if held_keys['f']:
-        drone.move_down(SPEED)
-    if held_keys['o']:
-        drone.takeoff()
-    if held_keys['l']:
-        drone.land()
 
     state = drone.get_current_state()
 
@@ -110,6 +94,31 @@ def update():
     new_position = model_drone.position + Vec3(vgz, vgy, -vgx)
     model_drone.position = new_position
 
+def input(key):
+    if key.contains('w'):
+        drone.move_forward(SPEED)
+    if key.contains('s'):
+        drone.move_back(SPEED)
+    if key.contains('a'):
+        drone.move_left(SPEED)
+    if key.contains('d'):
+        drone.move_right(SPEED)
+    if key.contains('up arrow'):
+        drone.move_up(SPEED)
+    if key.contains('down arrow'):
+        drone.move_down(SPEED)
+    if key.contains('q'):
+        drone.rotate_counter_clockwise(R_SPEED)
+    if key.contains('e'):
+        drone.rotate_clockwise(R_SPEED)
+    if key.contains('r'):
+        drone.move_up(SPEED)
+    if key.contains('f'):
+        drone.move_down(SPEED)
+    if key.contains('o'):
+        drone.takeoff()
+    if key.contains('l'):
+        drone.land()
 
 EditorCamera()
 app.run()
